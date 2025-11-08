@@ -92,11 +92,34 @@ export class ClaudeController {
                   this.callbacks.onOutput(agent.id, agent.sessionId, textContent, 'stdout');
                 }
 
-                // Check for Edit tool use
+                // Check for tool use and show activity
                 const toolUseItems = parsed.message.content.filter((item: any) => item.type === 'tool_use');
                 console.log(`[${agent.name}] Found ${toolUseItems.length} tool_use items in assistant message`);
                 for (const toolUse of toolUseItems) {
                   console.log(`[${agent.name}] Tool use detected: ${toolUse.name} (id: ${toolUse.id})`);
+
+                  // Format and send tool activity message
+                  let activityMessage = `🔧 ${toolUse.name}`;
+                  if (toolUse.name === 'Read') {
+                    activityMessage += ` 📖 ${toolUse.input.file_path}`;
+                  } else if (toolUse.name === 'Write') {
+                    activityMessage += ` ✍️ ${toolUse.input.file_path}`;
+                  } else if (toolUse.name === 'Edit') {
+                    activityMessage += ` ✏️ ${toolUse.input.file_path}`;
+                  } else if (toolUse.name === 'Bash') {
+                    activityMessage += ` 💻 ${toolUse.input.command?.substring(0, 50) || ''}`;
+                  } else if (toolUse.name === 'Grep') {
+                    activityMessage += ` 🔍 "${toolUse.input.pattern}"`;
+                  } else if (toolUse.name === 'Glob') {
+                    activityMessage += ` 📂 "${toolUse.input.pattern}"`;
+                  } else if (toolUse.name === 'Task') {
+                    activityMessage += ` 🤖 ${toolUse.input.description || ''}`;
+                  }
+
+                  outputBuffer.push(activityMessage);
+                  this.callbacks.onOutput(agent.id, agent.sessionId, activityMessage, 'stdout');
+
+                  // Check for Edit permission request
                   if (toolUse.name === 'Edit' && this.callbacks.onEditPermissionRequest) {
                     const editRequest: EditPermissionRequest = {
                       agentId: agent.id,
@@ -111,14 +134,17 @@ export class ClaudeController {
                   }
                 }
               }
-              // Log tool use and results but don't send to frontend
-              else if (parsed.type === 'tool_use' || parsed.type === 'tool_result') {
-                console.log(`[${agent.name}] Tool activity:`, JSON.stringify(parsed).substring(0, 200));
+              // Log internal messages but don't send to frontend (user, system, tool_result)
+              else if (parsed.type === 'user' || parsed.type === 'system' || parsed.type === 'tool_result') {
+                console.log(`[${agent.name}] Internal message (${parsed.type}):`, JSON.stringify(parsed).substring(0, 200));
+              }
+              // Unknown message types - log for debugging
+              else {
+                console.log(`[${agent.name}] Unknown message type: ${parsed.type}`);
               }
             } catch (parseError) {
-              // If not valid JSON, send as-is
-              outputBuffer.push(line);
-              this.callbacks.onOutput(agent.id, agent.sessionId, line, 'stdout');
+              // If not valid JSON, it's likely just log output - don't send to chat
+              console.log(`[${agent.name}] Non-JSON output (ignored):`, line.substring(0, 100));
             }
           }
         } catch (error) {
@@ -215,17 +241,51 @@ export class ClaudeController {
   }
 
   /**
-   * Accept a change proposal
+   * Accept a change proposal (send 'y' as user message in stream-json format)
    */
-  acceptChange(process: ChildProcess): void {
-    this.sendInput(process, 'y');
+  acceptChange(process: ChildProcess, toolUseId: string): void {
+    console.log(`[ClaudeController] acceptChange called`);
+    console.log(`[ClaudeController] Process PID: ${process.pid}`);
+    console.log(`[ClaudeController] Tool Use ID: ${toolUseId}`);
+    console.log(`[ClaudeController] Process killed: ${process.killed}`);
+    console.log(`[ClaudeController] stdin exists: ${!!process.stdin}`);
+    console.log(`[ClaudeController] stdin writable: ${process.stdin?.writable}`);
+
+    // Send 'y' as a user message (approval for edit permission prompt)
+    if (process.stdin) {
+      const approvalMessage = JSON.stringify({
+        type: 'user',
+        message: {
+          role: 'user',
+          content: 'y'
+        }
+      });
+      console.log(`[ClaudeController] Sending approval message:`, approvalMessage);
+      const result = process.stdin.write(approvalMessage + '\n');
+      console.log(`[ClaudeController] Write result: ${result}`);
+    } else {
+      console.error(`[ClaudeController] ❌ stdin is null, cannot send approval`);
+    }
   }
 
   /**
-   * Decline a change proposal
+   * Decline a change proposal (send 'n' as user message in stream-json format)
    */
-  declineChange(process: ChildProcess): void {
-    this.sendInput(process, 'n');
+  declineChange(process: ChildProcess, toolUseId: string): void {
+    console.log(`[ClaudeController] declineChange called for tool use: ${toolUseId}`);
+
+    // Send 'n' as a user message (rejection for edit permission prompt)
+    if (process.stdin) {
+      const rejectionMessage = JSON.stringify({
+        type: 'user',
+        message: {
+          role: 'user',
+          content: 'n'
+        }
+      });
+      console.log(`[ClaudeController] Sending rejection message:`, rejectionMessage);
+      process.stdin.write(rejectionMessage + '\n');
+    }
   }
 
   /**

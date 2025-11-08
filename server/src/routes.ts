@@ -232,6 +232,62 @@ export function createRoutes(agentManager: AgentManager) {
   });
 
   /**
+   * Approve edit permission request
+   */
+  app.post('/api/agents/:agentId/edit/approve', async (c) => {
+    try {
+      const agentId = c.req.param('agentId');
+      const { toolUseId } = await c.req.json();
+
+      console.log(`\n[API] POST /api/agents/${agentId}/edit/approve`);
+      console.log(`[API] Tool Use ID: ${toolUseId}`);
+
+      if (!toolUseId) {
+        console.error(`[API] ❌ Missing toolUseId`);
+        return c.json({ error: 'Missing toolUseId' }, 400);
+      }
+
+      const success = agentManager.approveEdit(agentId, toolUseId);
+
+      if (!success) {
+        console.error(`[API] ❌ Approval failed`);
+        return c.json({ error: 'Agent not found' }, 404);
+      }
+
+      console.log(`[API] ✅ Approval successful\n`);
+      return c.json({ status: 'approved' });
+    } catch (error) {
+      console.error('[API] ❌ Exception during approval:', error);
+      return c.json({ error: 'Failed to approve edit' }, 500);
+    }
+  });
+
+  /**
+   * Reject edit permission request
+   */
+  app.post('/api/agents/:agentId/edit/reject', async (c) => {
+    try {
+      const agentId = c.req.param('agentId');
+      const { toolUseId } = await c.req.json();
+
+      if (!toolUseId) {
+        return c.json({ error: 'Missing toolUseId' }, 400);
+      }
+
+      const success = agentManager.rejectEdit(agentId, toolUseId);
+
+      if (!success) {
+        return c.json({ error: 'Agent not found' }, 404);
+      }
+
+      return c.json({ status: 'rejected' });
+    } catch (error) {
+      console.error('Failed to reject edit:', error);
+      return c.json({ error: 'Failed to reject edit' }, 500);
+    }
+  });
+
+  /**
    * Select directory using native OS dialog
    */
   app.get('/api/select-directory', async (c) => {

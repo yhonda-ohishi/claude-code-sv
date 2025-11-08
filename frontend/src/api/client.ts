@@ -118,6 +118,21 @@ class ApiClient {
     });
   }
 
+  // Edit permission management
+  async approveEdit(agentId: string, toolUseId: string): Promise<{ status: string }> {
+    return this.request(`/agents/${agentId}/edit/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ toolUseId }),
+    });
+  }
+
+  async rejectEdit(agentId: string, toolUseId: string): Promise<{ status: string }> {
+    return this.request(`/agents/${agentId}/edit/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ toolUseId }),
+    });
+  }
+
   // Directory selection
   async selectDirectory(): Promise<{ path: string | null; cancelled: boolean }> {
     return this.request('/select-directory');

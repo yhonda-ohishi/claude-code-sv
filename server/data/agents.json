@@ -1,7 +1,7 @@
 [
   {
-    "id": "agent-1762609648288-nlv864k",
-    "sessionId": "session-front-1762609648288",
+    "id": "agent-1762613154184-sginfzd",
+    "sessionId": "session-front-1762613154184",
     "name": "front",
     "role": "front",
     "workDir": "C:\\js\\claude-code-sv",
@@ -9,7 +9,7 @@
       "**/*"
     ],
     "status": "running",
-    "startedAt": 1762609648288,
-    "pid": 37712
+    "startedAt": 1762613154184,
+    "pid": 30212
   }
 ]

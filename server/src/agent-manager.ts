@@ -333,6 +333,68 @@ export class AgentManager {
   }
 
   /**
+   * Approve edit permission request
+   */
+  approveEdit(agentId: string, toolUseId: string): boolean {
+    console.log(`\n========== EDIT APPROVAL REQUEST ==========`);
+    console.log(`Agent ID: ${agentId}`);
+    console.log(`Tool Use ID: ${toolUseId}`);
+    console.log(`Current agents: ${Array.from(this.agents.keys()).join(', ')}`);
+
+    const agent = this.agents.get(agentId);
+    if (!agent) {
+      console.error(`[AgentManager] ❌ Agent ${agentId} NOT FOUND`);
+      console.log(`==========================================\n`);
+      return false;
+    }
+
+    console.log(`Agent status: ${agent.status}`);
+    console.log(`Agent name: ${agent.name}`);
+    console.log(`Process exists: ${!!agent.process}`);
+    console.log(`Process killed: ${agent.process?.killed}`);
+    console.log(`Process stdin exists: ${!!agent.process?.stdin}`);
+
+    if (agent.status !== 'running') {
+      console.error(`[AgentManager] ❌ Agent ${agentId} is not running (status: ${agent.status})`);
+      console.log(`==========================================\n`);
+      return false;
+    }
+
+    try {
+      console.log(`[AgentManager] ✅ Sending approval to agent process...`);
+      this.claudeController.acceptChange(agent.process, toolUseId);
+      console.log(`[AgentManager] ✅ Approval sent successfully`);
+      console.log(`==========================================\n`);
+      return true;
+    } catch (error) {
+      console.error(`[AgentManager] ❌ Failed to approve edit:`, error);
+      console.log(`==========================================\n`);
+      return false;
+    }
+  }
+
+  /**
+   * Reject edit permission request
+   */
+  rejectEdit(agentId: string, toolUseId: string): boolean {
+    const agent = this.agents.get(agentId);
+    if (!agent || agent.status !== 'running') {
+      console.error(`[AgentManager] Cannot reject edit: agent ${agentId} not running`);
+      return false;
+    }
+
+    try {
+      console.log(`[AgentManager] Rejecting edit for agent ${agentId}, toolUseId: ${toolUseId}`);
+      // Send rejection message to reject the edit
+      this.claudeController.declineChange(agent.process, toolUseId);
+      return true;
+    } catch (error) {
+      console.error(`Failed to reject edit for agent ${agentId}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Handle agent output
    */
   private handleAgentOutput(agentId: string, sessionId: string, output: string, type: 'stdout' | 'stderr'): void {

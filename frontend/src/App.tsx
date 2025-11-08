@@ -18,7 +18,8 @@ function App() {
 
   const { agents, startAgent, stopAgent, addAgent, removeAgent, updateAgent } = useAgents();
   const { changes, addChange, updateChangeStatus, acceptChange, declineChange, sendInstruction } = useChanges();
-  const { saveSession, updateSessionStatus, saveOutputLog, saveChange } = useIndexedDB();
+  const { saveSession, updateSessionStatus, saveOutputLog, saveChange, getAllSessions, getOutputLogs } = useIndexedDB();
+  const [isRestoring, setIsRestoring] = useState(true);
 
   const handleWebSocketMessage = useCallback((message: WSMessage) => {
     console.log('WebSocket message:', message);
@@ -102,6 +103,57 @@ function App() {
   }, [addAgent, removeAgent, addChange, updateChangeStatus, saveSession, updateSessionStatus, saveOutputLog, saveChange]);
 
   const { isConnected } = useWebSocket(handleWebSocketMessage);
+
+  // Restore data from IndexedDB on initial page load
+  useEffect(() => {
+    const restoreFromIndexedDB = async () => {
+      try {
+        console.log('[App] Restoring data from IndexedDB...');
+
+        // Restore sessions and their output logs
+        const sessions = await getAllSessions();
+        console.log(`[App] Found ${sessions.length} sessions in IndexedDB`);
+
+        for (const session of sessions) {
+          // Only restore running sessions
+          if (session.status === 'running') {
+            console.log(`[App] Restoring session ${session.id} for agent ${session.agentName}`);
+
+            // Load output logs for this session
+            const logs = await getOutputLogs(session.id);
+            console.log(`[App] Found ${logs.length} output logs for session ${session.id}`);
+
+            // Find the agent ID from the current agents list (from server)
+            const agent = agents.find(a => a.sessionId === session.id);
+            if (agent) {
+              // Restore outputs to state
+              const outputs = logs.map(log => log.output);
+              setAgentOutputs(prev => {
+                const newMap = new Map(prev);
+                newMap.set(agent.id, outputs);
+                return newMap;
+              });
+              console.log(`[App] Restored ${outputs.length} outputs for agent ${agent.id}`);
+            }
+          }
+        }
+
+        console.log('[App] Data restoration complete');
+      } catch (error) {
+        console.error('[App] Failed to restore data from IndexedDB:', error);
+      } finally {
+        setIsRestoring(false);
+      }
+    };
+
+    // Only restore if we have agents loaded from server
+    if (agents.length > 0 && isRestoring) {
+      restoreFromIndexedDB();
+    } else if (agents.length === 0) {
+      // No agents to restore
+      setIsRestoring(false);
+    }
+  }, [agents, getAllSessions, getOutputLogs, isRestoring]);
 
   // Load agent outputs on initial mount only (not when agents change)
   useEffect(() => {
@@ -321,14 +373,25 @@ function App() {
         <EditPermissionModal
           isOpen={true}
           onClose={() => setEditPermissionRequest(null)}
-          onApprove={() => {
-            // TODO: エージェントに承認を送信
+          onApprove={async () => {
             console.log('Approved edit for:', editPermissionRequest.filePath);
+            try {
+              await apiClient.approveEdit(editPermissionRequest.agentId, editPermissionRequest.toolUseId);
+              console.log('Edit approval sent to server');
+            } catch (error) {
+              console.error('Failed to send edit approval:', error);
+              alert('編集承認の送信に失敗しました。エージェントが再起動された可能性があります。');
+            }
             setEditPermissionRequest(null);
           }}
-          onReject={() => {
-            // TODO: エージェントに拒否を送信
+          onReject={async () => {
             console.log('Rejected edit for:', editPermissionRequest.filePath);
+            try {
+              await apiClient.rejectEdit(editPermissionRequest.agentId, editPermissionRequest.toolUseId);
+              console.log('Edit rejection sent to server');
+            } catch (error) {
+              console.error('Failed to send edit rejection:', error);
+            }
             setEditPermissionRequest(null);
           }}
           filePath={editPermissionRequest.filePath}
