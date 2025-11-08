@@ -28,16 +28,18 @@ export function createRoutes(agentManager: AgentManager) {
         return c.json({ error: 'Missing required fields' }, 400);
       }
 
-      const agent = agentManager.startAgent(request);
+      const agent = await agentManager.startAgent(request);
 
       return c.json({
         agentId: agent.id,
         sessionId: agent.sessionId,
         status: 'started'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to start agent:', error);
-      return c.json({ error: 'Failed to start agent' }, 500);
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+      return c.json({ error: 'Failed to start agent', details: error.message }, 500);
     }
   });
 

@@ -1,5 +1,6 @@
 import { Agent, Change, StartAgentRequest, EditPermissionRequest } from './types';
 import { ClaudeController, ClaudeControllerCallbacks } from './claude-controller';
+import { ClaudeControllerSDK, ClaudeControllerSDKCallbacks } from './claude-controller-sdk';
 import { ChangeParser } from './change-parser';
 import { PersistenceManager, PersistedAgent } from './persistence';
 
@@ -15,9 +16,11 @@ export class AgentManager {
   private agents: Map<string, Agent> = new Map();
   private changes: Map<string, Change> = new Map();
   private claudeController: ClaudeController;
+  private claudeControllerSDK: ClaudeControllerSDK;
   private changeParser: ChangeParser;
   private callbacks: AgentManagerCallbacks;
   private persistence: PersistenceManager;
+  private useSDK: boolean = true; // SDK版をテスト
 
   constructor(callbacks: AgentManagerCallbacks) {
     this.callbacks = callbacks;
@@ -36,7 +39,20 @@ export class AgentManager {
       }
     };
 
+    const sdkCallbacks: ClaudeControllerSDKCallbacks = {
+      onOutput: (agentId, sessionId, output, type) => {
+        this.handleAgentOutput(agentId, sessionId, output, type);
+      },
+      onExit: (agentId, sessionId, code) => {
+        this.handleAgentExit(agentId, sessionId, code);
+      },
+      onEditPermissionRequest: (request) => {
+        this.callbacks.onEditPermissionRequest(request);
+      }
+    };
+
     this.claudeController = new ClaudeController(controllerCallbacks);
+    this.claudeControllerSDK = new ClaudeControllerSDK(sdkCallbacks);
   }
 
   /**
@@ -82,8 +98,10 @@ export class AgentManager {
       // Process is still running - attempt to kill and mark as stopped
       console.log(`[AgentManager] Process still running for agent ${persistedAgent.name} (PID: ${persistedAgent.pid}), killing...`);
       try {
-        process.kill(persistedAgent.pid, 'SIGTERM');
-        console.log(`[AgentManager] Killed orphaned process ${persistedAgent.pid}`);
+        if (persistedAgent.pid !== undefined) {
+          process.kill(persistedAgent.pid, 'SIGTERM');
+          console.log(`[AgentManager] Killed orphaned process ${persistedAgent.pid}`);
+        }
       } catch (e) {
         console.log(`[AgentManager] Could not kill process ${persistedAgent.pid} (may already be dead)`);
       }
@@ -153,7 +171,7 @@ export class AgentManager {
   /**
    * Start a new agent
    */
-  startAgent(request: StartAgentRequest): Agent {
+  async startAgent(request: StartAgentRequest): Promise<Agent> {
     const sessionId = request.sessionId || this.generateSessionId(request.name);
     const agentId = this.generateAgentId();
 
@@ -168,7 +186,10 @@ export class AgentManager {
       startedAt: Date.now()
     };
 
-    const agent = this.claudeController.startClaude(agentConfig);
+    const agent = this.useSDK
+      ? await this.claudeControllerSDK.startClaude(agentConfig)
+      : this.claudeController.startClaude(agentConfig);
+
     this.agents.set(agentId, agent);
 
     this.callbacks.onAgentStarted(agent);
@@ -188,9 +209,13 @@ export class AgentManager {
       return false;
     }
 
-    // Only stop if the process exists and is running
-    if (agent.process && agent.status === 'running') {
-      this.claudeController.stopClaude(agent.process, agentId);
+    // Stop using appropriate controller
+    if (agent.status === 'running') {
+      if (this.useSDK) {
+        this.claudeControllerSDK.stopClaude(agentId);
+      } else if (agent.process) {
+        this.claudeController.stopClaude(agent.process, agentId);
+      }
     }
 
     // Update status to stopped
@@ -259,7 +284,8 @@ export class AgentManager {
     }
 
     change.status = 'accepted';
-    this.claudeController.acceptChange(agent.process);
+    // CLI版では toolUseId が必要（change から取得する必要がある場合は追加）
+    this.claudeController.acceptChange(agent.process, changeId);
 
     return true;
   }
@@ -279,7 +305,8 @@ export class AgentManager {
     }
 
     change.status = 'declined';
-    this.claudeController.declineChange(agent.process);
+    // CLI版では toolUseId が必要（change から取得する必要がある場合は追加）
+    this.claudeController.declineChange(agent.process, changeId);
 
     return true;
   }
@@ -322,8 +349,12 @@ export class AgentManager {
     }
 
     try {
-      // Send message to agent using ClaudeController (handles stream-json format)
-      this.claudeController.sendInput(agent.process, message);
+      // SDK版とCLI版で処理を分岐
+      if (this.useSDK) {
+        this.claudeControllerSDK.sendInput(agentId, message);
+      } else {
+        this.claudeController.sendInput(agent.process, message);
+      }
       console.log(`Message sent to agent ${agentId}:`, message);
       return true;
     } catch (error) {
@@ -339,7 +370,7 @@ export class AgentManager {
     console.log(`\n========== EDIT APPROVAL REQUEST ==========`);
     console.log(`Agent ID: ${agentId}`);
     console.log(`Tool Use ID: ${toolUseId}`);
-    console.log(`Current agents: ${Array.from(this.agents.keys()).join(', ')}`);
+    console.log(`Using SDK: ${this.useSDK}`);
 
     const agent = this.agents.get(agentId);
     if (!agent) {
@@ -350,9 +381,6 @@ export class AgentManager {
 
     console.log(`Agent status: ${agent.status}`);
     console.log(`Agent name: ${agent.name}`);
-    console.log(`Process exists: ${!!agent.process}`);
-    console.log(`Process killed: ${agent.process?.killed}`);
-    console.log(`Process stdin exists: ${!!agent.process?.stdin}`);
 
     if (agent.status !== 'running') {
       console.error(`[AgentManager] ❌ Agent ${agentId} is not running (status: ${agent.status})`);
@@ -361,11 +389,14 @@ export class AgentManager {
     }
 
     try {
-      console.log(`[AgentManager] ✅ Sending approval to agent process...`);
-      this.claudeController.acceptChange(agent.process, toolUseId);
+      console.log(`[AgentManager] ✅ Sending approval...`);
+      const success = this.useSDK
+        ? this.claudeControllerSDK.approveEdit(toolUseId)
+        : (this.claudeController.acceptChange(agent.process, toolUseId), true);
+
       console.log(`[AgentManager] ✅ Approval sent successfully`);
       console.log(`==========================================\n`);
-      return true;
+      return success;
     } catch (error) {
       console.error(`[AgentManager] ❌ Failed to approve edit:`, error);
       console.log(`==========================================\n`);
@@ -385,9 +416,11 @@ export class AgentManager {
 
     try {
       console.log(`[AgentManager] Rejecting edit for agent ${agentId}, toolUseId: ${toolUseId}`);
-      // Send rejection message to reject the edit
-      this.claudeController.declineChange(agent.process, toolUseId);
-      return true;
+      const success = this.useSDK
+        ? this.claudeControllerSDK.rejectEdit(toolUseId)
+        : (this.claudeController.declineChange(agent.process, toolUseId), true);
+
+      return success;
     } catch (error) {
       console.error(`Failed to reject edit for agent ${agentId}:`, error);
       return false;
