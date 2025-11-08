@@ -71,6 +71,7 @@ export function useIndexedDB() {
     getSession,
     getAllSessions,
     updateSessionStatus,
+    updateConversationHistory,
     saveOutputLog,
     getOutputLogs,
     saveChange,

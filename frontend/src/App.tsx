@@ -18,7 +18,7 @@ function App() {
 
   const { agents, startAgent, stopAgent, addAgent, removeAgent, updateAgent } = useAgents();
   const { changes, addChange, updateChangeStatus, acceptChange, declineChange, sendInstruction } = useChanges();
-  const { saveSession, updateSessionStatus, saveOutputLog, saveChange, getAllSessions, getOutputLogs } = useIndexedDB();
+  const { saveSession, updateSessionStatus, saveOutputLog, saveChange, getAllSessions, getOutputLogs, updateConversationHistory } = useIndexedDB();
   const [isRestoring, setIsRestoring] = useState(true);
 
   const handleWebSocketMessage = useCallback((message: WSMessage) => {
@@ -274,12 +274,26 @@ function App() {
 
   const handleSendMessage = useCallback(async (agentId: string, message: string) => {
     try {
+      const agent = agents.find(a => a.id === agentId);
+      if (!agent) {
+        console.error('Agent not found:', agentId);
+        return;
+      }
+
       // ユーザーメッセージを出力に追加（プレフィックス付き）
       setAgentOutputs(prev => {
         const newMap = new Map(prev);
         const outputs = newMap.get(agentId) || [];
         newMap.set(agentId, [...outputs, `USER: ${message}`]);
         return newMap;
+      });
+
+      // IndexedDBにユーザーメッセージを保存
+      const timestamp = Date.now();
+      await saveOutputLog(agent.sessionId, {
+        timestamp,
+        output: `USER: ${message}`,
+        type: 'stdout',
       });
 
       // APIクライアントを使ってエージェントにメッセージを送信
@@ -289,7 +303,7 @@ function App() {
       console.error('Failed to send message:', error);
       alert('メッセージの送信に失敗しました');
     }
-  }, []);
+  }, [agents, saveOutputLog]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
