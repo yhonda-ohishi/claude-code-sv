@@ -1,4 +1,4 @@
-import { Agent, Change, StartAgentRequest } from './types';
+import { Agent, Change, StartAgentRequest, EditPermissionRequest } from './types';
 import { ClaudeController, ClaudeControllerCallbacks } from './claude-controller';
 import { ChangeParser } from './change-parser';
 import { PersistenceManager, PersistedAgent } from './persistence';
@@ -8,6 +8,7 @@ export interface AgentManagerCallbacks {
   onAgentStopped: (agentId: string, sessionId: string) => void;
   onAgentOutput: (agentId: string, sessionId: string, output: string, type: 'stdout' | 'stderr') => void;
   onNewChange: (change: Change) => void;
+  onEditPermissionRequest: (request: EditPermissionRequest) => void;
 }
 
 export class AgentManager {
@@ -29,6 +30,9 @@ export class AgentManager {
       },
       onExit: (agentId, sessionId, code) => {
         this.handleAgentExit(agentId, sessionId, code);
+      },
+      onEditPermissionRequest: (request) => {
+        this.callbacks.onEditPermissionRequest(request);
       }
     };
 

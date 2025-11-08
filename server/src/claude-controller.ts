@@ -1,10 +1,11 @@
 import { spawn, ChildProcess } from 'child_process';
-import { Agent } from './types';
+import { Agent, EditPermissionRequest } from './types';
 import { OutputBuffer } from './output-buffer';
 
 export interface ClaudeControllerCallbacks {
   onOutput: (agentId: string, sessionId: string, output: string, type: 'stdout' | 'stderr') => void;
   onExit: (agentId: string, sessionId: string, code: number | null) => void;
+  onEditPermissionRequest?: (request: EditPermissionRequest) => void;
 }
 
 export class ClaudeController {
@@ -89,6 +90,25 @@ export class ClaudeController {
                   console.log(`[${agent.name}] >>> Buffer size after push: ${outputBuffer.getAll().length}`);
                   console.log(`[${agent.name}] >>> Calling onOutput callback`);
                   this.callbacks.onOutput(agent.id, agent.sessionId, textContent, 'stdout');
+                }
+
+                // Check for Edit tool use
+                const toolUseItems = parsed.message.content.filter((item: any) => item.type === 'tool_use');
+                console.log(`[${agent.name}] Found ${toolUseItems.length} tool_use items in assistant message`);
+                for (const toolUse of toolUseItems) {
+                  console.log(`[${agent.name}] Tool use detected: ${toolUse.name} (id: ${toolUse.id})`);
+                  if (toolUse.name === 'Edit' && this.callbacks.onEditPermissionRequest) {
+                    const editRequest: EditPermissionRequest = {
+                      agentId: agent.id,
+                      sessionId: agent.sessionId,
+                      filePath: toolUse.input.file_path,
+                      oldString: toolUse.input.old_string,
+                      newString: toolUse.input.new_string,
+                      toolUseId: toolUse.id,
+                    };
+                    console.log(`[${agent.name}] *** EDIT PERMISSION REQUEST DETECTED for ${editRequest.filePath} ***`);
+                    this.callbacks.onEditPermissionRequest(editRequest);
+                  }
                 }
               }
               // Log tool use and results but don't send to frontend

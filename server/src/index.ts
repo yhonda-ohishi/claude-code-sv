@@ -70,6 +70,10 @@ async function main() {
     onNewChange: (change) => {
       console.log(`New change detected: ${change.filePath} from ${change.agentName}`);
       wsHandler.broadcastNewChange(change);
+    },
+    onEditPermissionRequest: (request) => {
+      console.log(`Edit permission request: ${request.filePath} from agent ${request.agentId}`);
+      wsHandler.broadcastEditPermissionRequest(request);
     }
   });
 

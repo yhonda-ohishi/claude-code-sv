@@ -80,7 +80,16 @@ export interface StopAgentRequest {
   agentId: string;
 }
 
+export interface EditPermissionRequest {
+  agentId: string;
+  sessionId: string;
+  filePath: string;
+  oldString: string;
+  newString: string;
+  toolUseId: string;
+}
+
 export interface WebSocketMessage {
-  type: 'subscribe' | 'agent_started' | 'agent_stopped' | 'new_change' | 'status_update' | 'agent_output' | 'command_output' | 'command_completed';
+  type: 'subscribe' | 'agent_started' | 'agent_stopped' | 'new_change' | 'status_update' | 'agent_output' | 'command_output' | 'command_completed' | 'edit_permission_request';
   data?: any;
 }

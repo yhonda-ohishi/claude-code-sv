@@ -2,17 +2,19 @@ import { useState, useCallback, useEffect } from 'react';
 import { AgentManager } from './components/AgentManager';
 import { ChangeList } from './components/ChangeList';
 import { AgentStartForm } from './components/AgentStartForm';
+import { EditPermissionModal } from './components/EditPermissionModal';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAgents } from './hooks/useAgents';
 import { useChanges } from './hooks/useChanges';
 import { useIndexedDB } from './hooks/useIndexedDB';
-import { WSMessage, StartAgentRequest } from './types';
+import { WSMessage, StartAgentRequest, EditPermissionRequest } from './types';
 import { apiClient } from './api/client';
 
 function App() {
   const [activeTab, setActiveTab] = useState<'agents' | 'changes'>('agents');
   const [agentOutputs, setAgentOutputs] = useState<Map<string, string[]>>(new Map());
   const [commandOutputs, setCommandOutputs] = useState<Map<string, { output: string; status: string }>>(new Map());
+  const [editPermissionRequest, setEditPermissionRequest] = useState<EditPermissionRequest | null>(null);
 
   const { agents, startAgent, stopAgent, addAgent, removeAgent, updateAgent } = useAgents();
   const { changes, addChange, updateChangeStatus, acceptChange, declineChange, sendInstruction } = useChanges();
@@ -90,6 +92,11 @@ function App() {
           });
           return newMap;
         });
+        break;
+
+      case 'edit_permission_request':
+        console.log('Edit permission request received:', message.data);
+        setEditPermissionRequest(message.data);
         break;
     }
   }, [addAgent, removeAgent, addChange, updateChangeStatus, saveSession, updateSessionStatus, saveOutputLog, saveChange]);
@@ -308,6 +315,27 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* 編集権限モーダル */}
+      {editPermissionRequest && (
+        <EditPermissionModal
+          isOpen={true}
+          onClose={() => setEditPermissionRequest(null)}
+          onApprove={() => {
+            // TODO: エージェントに承認を送信
+            console.log('Approved edit for:', editPermissionRequest.filePath);
+            setEditPermissionRequest(null);
+          }}
+          onReject={() => {
+            // TODO: エージェントに拒否を送信
+            console.log('Rejected edit for:', editPermissionRequest.filePath);
+            setEditPermissionRequest(null);
+          }}
+          filePath={editPermissionRequest.filePath}
+          oldString={editPermissionRequest.oldString}
+          newString={editPermissionRequest.newString}
+        />
+      )}
     </div>
   );
 }

@@ -1,15 +1,15 @@
 [
   {
-    "id": "agent-1762607689508-0jhfx2c",
-    "sessionId": "session-test3-1762607689508",
-    "name": "test3",
-    "role": "test3",
-    "workDir": "C:\\js\\testjs",
+    "id": "agent-1762609648288-nlv864k",
+    "sessionId": "session-front-1762609648288",
+    "name": "front",
+    "role": "front",
+    "workDir": "C:\\js\\claude-code-sv",
     "patterns": [
       "**/*"
     ],
     "status": "running",
-    "startedAt": 1762607689508,
-    "pid": 28212
+    "startedAt": 1762609648288,
+    "pid": 37712
   }
 ]

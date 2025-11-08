@@ -58,6 +58,15 @@ export interface Command {
   exitCode?: number;
 }
 
+export interface EditPermissionRequest {
+  agentId: string;
+  sessionId: string;
+  filePath: string;
+  oldString: string;
+  newString: string;
+  toolUseId: string;
+}
+
 // WebSocket message types
 export type WSMessage =
   | { type: 'subscribe' }
@@ -67,7 +76,8 @@ export type WSMessage =
   | { type: 'status_update'; data: { changeId: string; status: Change['status'] } }
   | { type: 'agent_output'; data: { agentId: string; sessionId: string; output: string; timestamp: number } }
   | { type: 'command_output'; data: { commandId: string; output: string; status: Command['status'] } }
-  | { type: 'command_completed'; data: { commandId: string; exitCode: number; status: Command['status'] } };
+  | { type: 'command_completed'; data: { commandId: string; exitCode: number; status: Command['status'] } }
+  | { type: 'edit_permission_request'; data: EditPermissionRequest };
 
 // API request/response types
 export interface StartAgentRequest {

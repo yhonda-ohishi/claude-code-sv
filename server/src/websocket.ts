@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { IncomingMessage } from 'http';
-import { WebSocketMessage, Agent, Change } from './types';
+import { WebSocketMessage, Agent, Change, EditPermissionRequest } from './types';
 
 export class WebSocketHandler {
   private wss: WebSocketServer;
@@ -137,6 +137,17 @@ export class WebSocketHandler {
         changeId,
         status
       }
+    });
+  }
+
+  /**
+   * Broadcast edit permission request
+   */
+  broadcastEditPermissionRequest(request: EditPermissionRequest): void {
+    console.log(`[websocket.ts] Broadcasting edit permission request for ${request.filePath}`);
+    this.broadcast({
+      type: 'edit_permission_request',
+      data: request
     });
   }
 
