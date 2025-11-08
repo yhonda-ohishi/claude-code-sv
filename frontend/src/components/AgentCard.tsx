@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Agent } from '../types';
 import { ChatViewer } from './ChatViewer';
+import { AgentSessionHistory } from './AgentSessionHistory';
 
 interface AgentCardProps {
   agent: Agent;
@@ -10,9 +12,11 @@ interface AgentCardProps {
   onDelete?: (agentId: string) => void;
   onOpenCommand: (agentId: string) => void;
   onSendMessage?: (agentId: string, message: string) => void;
+  onLoadSession?: (agentId: string, sessionId: string) => void;
 }
 
-export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart, onDelete, onOpenCommand, onSendMessage }: AgentCardProps) {
+export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart, onDelete, onOpenCommand, onSendMessage, onLoadSession }: AgentCardProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const formatTimestamp = (timestamp: number) => {
     const diff = Date.now() - timestamp;
     const minutes = Math.floor(diff / 60000);
@@ -72,6 +76,15 @@ export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart,
                 )}
               </>
             )}
+            {onLoadSession && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="w-7 h-7 flex items-center justify-center bg-purple-600 text-white rounded hover:bg-purple-700 transition text-sm"
+                title="過去のセッションを読み込む"
+              >
+                📚
+              </button>
+            )}
             <button
               onClick={() => onOpenCommand(agent.id)}
               className="w-7 h-7 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
@@ -93,6 +106,16 @@ export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart,
           isRunning={agent.status === 'running'}
         />
       </div>
+
+      {/* 履歴モーダル */}
+      {showHistory && onLoadSession && (
+        <AgentSessionHistory
+          agentName={agent.name}
+          currentSessionId={agent.sessionId}
+          onSelectSession={(sessionId) => onLoadSession(agent.id, sessionId)}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 }

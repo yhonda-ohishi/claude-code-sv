@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Agent } from '../types';
 import { AgentCard } from './AgentCard';
 import { CommandModal } from './CommandModal';
+import { useIndexedDB } from '../hooks/useIndexedDB';
 
 interface AgentManagerProps {
   agents: Agent[];
@@ -33,10 +34,26 @@ export function AgentManager({
   commandOutputs,
 }: AgentManagerProps) {
   const [commandModalAgent, setCommandModalAgent] = useState<string | null>(null);
+  const { getSession } = useIndexedDB();
 
   const currentCommandOutput = commandModalAgent
     ? commandOutputs.get(commandModalAgent)
     : undefined;
+
+  const handleLoadSession = async (agentId: string, sessionId: string) => {
+    const session = await getSession(sessionId);
+
+    if (session) {
+      // 過去のセッション情報で新しいエージェントを起動
+      // 停止処理は不要 - 単に新しいエージェントを起動するだけ
+      onStartAgent({
+        name: session.agentName,
+        role: session.role,
+        workDir: session.workDir,
+        patterns: session.patterns || ['**/*'],
+      });
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -56,6 +73,7 @@ export function AgentManager({
               onDelete={onDeleteAgent}
               onOpenCommand={(agentId) => setCommandModalAgent(agentId)}
               onSendMessage={onSendMessage}
+              onLoadSession={handleLoadSession}
             />
           ))}
         </div>
