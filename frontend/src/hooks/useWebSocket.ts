@@ -59,6 +59,11 @@ export function useWebSocket(onMessage: (message: WSMessage) => void) {
   }, []);
 
   useEffect(() => {
+    // 既に接続されている場合はスキップ
+    if (wsRef.current) {
+      return;
+    }
+
     connect();
 
     return () => {
@@ -69,7 +74,9 @@ export function useWebSocket(onMessage: (message: WSMessage) => void) {
         wsRef.current.close();
       }
     };
-  }, [connect]);
+    // 依存配列を空にして初回のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sendMessage = useCallback((message: WSMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {

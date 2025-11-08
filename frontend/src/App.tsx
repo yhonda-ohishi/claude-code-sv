@@ -60,6 +60,12 @@ function App() {
         setAgentOutputs(prev => {
           const newMap = new Map(prev);
           const outputs = newMap.get(message.data.agentId) || [];
+          // 重複チェック: 同じ出力が既に存在する場合はスキップ
+          const lastOutput = outputs[outputs.length - 1];
+          if (lastOutput === message.data.output) {
+            console.log('[App] Duplicate output detected, skipping:', message.data.output.substring(0, 50));
+            return prev;
+          }
           newMap.set(message.data.agentId, [...outputs, message.data.output]);
           return newMap;
         });
