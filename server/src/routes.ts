@@ -68,6 +68,30 @@ export function createRoutes(agentManager: AgentManager) {
   });
 
   /**
+   * Interrupt an agent
+   */
+  app.post('/api/agents/interrupt', async (c) => {
+    try {
+      const request: { agentId: string } = await c.req.json();
+
+      if (!request.agentId) {
+        return c.json({ error: 'Missing agentId' }, 400);
+      }
+
+      const success = agentManager.interruptAgent(request.agentId);
+
+      if (!success) {
+        return c.json({ error: 'Failed to interrupt agent' }, 400);
+      }
+
+      return c.json({ status: 'interrupted' });
+    } catch (error) {
+      console.error('Failed to interrupt agent:', error);
+      return c.json({ error: 'Failed to interrupt agent' }, 500);
+    }
+  });
+
+  /**
    * Delete an agent
    */
   app.delete('/api/agents/:agentId', async (c) => {

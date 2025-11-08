@@ -63,24 +63,24 @@ export function ChangeCard({ change, onAccept, onDecline, onInstruction }: Chang
   };
 
   return (
-    <div className="border rounded-lg p-4 mb-4 bg-white shadow-sm">
+    <div className="border border-gray-700 rounded-lg p-4 mb-4 bg-[#0d1117] shadow-sm">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-lg">Change #{change.id.slice(-6)}</h3>
+            <h3 className="font-semibold text-lg text-gray-100">Change #{change.id.slice(-6)}</h3>
             <span className={`text-sm font-medium ${getStatusColor()}`}>
               {getStatusIcon()} {change.status.charAt(0).toUpperCase() + change.status.slice(1)}
             </span>
           </div>
-          <div className="text-sm text-gray-600">
-            <div>Agent: <span className="font-medium">{change.agentName}</span></div>
-            <div>File: <span className="font-mono text-xs">{change.filePath}</span></div>
+          <div className="text-sm text-gray-400">
+            <div>Agent: <span className="font-medium text-gray-300">{change.agentName}</span></div>
+            <div>File: <span className="font-mono text-xs text-gray-300">{change.filePath}</span></div>
             <div>Time: {formatTimestamp(change.timestamp)}</div>
           </div>
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-gray-400 hover:text-gray-200"
         >
           {isExpanded ? '▼' : '▶'}
         </button>
@@ -113,8 +113,8 @@ export function ChangeCard({ change, onAccept, onDecline, onInstruction }: Chang
                 </button>
               </div>
 
-              <div className="border-t pt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="border-t border-gray-700 pt-3">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   💬 追加指示:
                 </label>
                 <div className="flex gap-2">
@@ -124,12 +124,12 @@ export function ChangeCard({ change, onAccept, onDecline, onInstruction }: Chang
                     onChange={(e) => setInstruction(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendInstruction()}
                     placeholder="例: エラーハンドリングを追加してください"
-                    className="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button
                     onClick={handleSendInstruction}
                     disabled={!instruction.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:bg-gray-700 disabled:cursor-not-allowed"
                   >
                     送信
                   </button>

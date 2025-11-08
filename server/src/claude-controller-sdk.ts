@@ -377,6 +377,21 @@ export class ClaudeControllerSDK {
   }
 
   /**
+   * Interrupt the current operation (abort without cleanup)
+   */
+  interruptAgent(agentId: string): boolean {
+    const activeAgent = this.activeAgents.get(agentId);
+    if (!activeAgent) {
+      console.error(`[ClaudeControllerSDK] Cannot interrupt: Agent ${agentId} not found`);
+      return false;
+    }
+
+    console.log(`[ClaudeControllerSDK] Interrupting agent ${agentId}`);
+    activeAgent.abortController.abort();
+    return true;
+  }
+
+  /**
    * Stop a Claude Agent
    */
   stopClaude(agentId: string): void {

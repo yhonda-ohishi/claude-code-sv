@@ -13,9 +13,10 @@ interface AgentCardProps {
   onOpenCommand: (agentId: string) => void;
   onSendMessage?: (agentId: string, message: string) => void;
   onLoadSession?: (agentId: string, sessionId: string) => void;
+  shortcutNumber?: number;
 }
 
-export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart, onDelete, onOpenCommand, onSendMessage, onLoadSession }: AgentCardProps) {
+export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart, onDelete, onOpenCommand, onSendMessage, onLoadSession, shortcutNumber }: AgentCardProps) {
   const [showHistory, setShowHistory] = useState(false);
   const formatTimestamp = (timestamp: number) => {
     const diff = Date.now() - timestamp;
@@ -32,12 +33,17 @@ export function AgentCard({ agent, outputs, messageCount = 0, onStop, onRestart,
   return (
     <div className="border rounded-lg mb-3 bg-white shadow-sm flex flex-col h-full w-[400px]">
       {/* 固定ヘッダー - スクロールしない */}
-      <div className="p-2 border-b bg-gray-50 flex-shrink-0">
+      <div className="p-2 border-b bg-gray-50 flex-shrink-0 sticky top-0 z-10 bg-gray-50">
         <div className="flex items-center justify-between gap-2">
           <div
             className="flex items-center gap-2 min-w-0 flex-1 cursor-help"
-            title={`Name: ${agent.name}\nRole: ${agent.role}\nSession: ${agent.sessionId}\nWork Dir: ${agent.workDir}\nPatterns: ${agent.patterns.join(', ')}\nMessages: ${messageCount}`}
+            title={`Name: ${agent.name}\nRole: ${agent.role}\nSession: ${agent.sessionId}\nWork Dir: ${agent.workDir}\nPatterns: ${agent.patterns.join(', ')}\nMessages: ${messageCount}${shortcutNumber ? `\nShortcut: Alt+${shortcutNumber}` : ''}`}
           >
+            {shortcutNumber && shortcutNumber <= 9 && (
+              <span className="text-xs font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded flex-shrink-0">
+                {shortcutNumber}
+              </span>
+            )}
             <span className="text-base">{agent.status === 'running' ? '✅' : '⏹️'}</span>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-semibold text-sm truncate">{agent.name}</span>

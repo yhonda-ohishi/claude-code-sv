@@ -352,10 +352,10 @@ function App() {
             commandOutputs={commandOutputs}
           />
         ) : (
-          <div className="h-full overflow-auto">
+          <div className="h-full overflow-auto bg-gray-900">
             <div className="container mx-auto p-4">
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold mb-4">📝 変更提案一覧</h2>
+              <div className="bg-[#0d1117] rounded-lg shadow-md border border-gray-700 p-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-100">📝 変更提案一覧</h2>
                 <ChangeList
                   changes={changes}
                   onAccept={acceptChange}

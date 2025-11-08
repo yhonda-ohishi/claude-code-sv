@@ -44,6 +44,13 @@ class ApiClient {
     });
   }
 
+  async interruptAgent(agentId: string): Promise<{ status: string }> {
+    return this.request('/agents/interrupt', {
+      method: 'POST',
+      body: JSON.stringify({ agentId }),
+    });
+  }
+
   async deleteAgent(agentId: string): Promise<{ status: string }> {
     return this.request(`/agents/${agentId}`, {
       method: 'DELETE',

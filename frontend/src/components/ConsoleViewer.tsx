@@ -6,7 +6,7 @@ interface ConsoleViewerProps {
   outputs: string[];
 }
 
-export function ConsoleViewer({ agentId, agentName, outputs }: ConsoleViewerProps) {
+export function ConsoleViewer({ outputs }: ConsoleViewerProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const consoleRef = useRef<HTMLDivElement>(null);
 

@@ -20,6 +20,14 @@ export function useIndexedDB() {
     await db.sessions.update(sessionId, { status, endedAt });
   }, []);
 
+  const updateConversationHistory = useCallback(async (sessionId: string, message: { role: 'user' | 'assistant'; content: string; timestamp: number }) => {
+    const session = await db.sessions.get(sessionId);
+    if (session) {
+      const updatedHistory = [...session.conversationHistory, message];
+      await db.sessions.update(sessionId, { conversationHistory: updatedHistory });
+    }
+  }, []);
+
   // Output log operations
   const saveOutputLog = useCallback(async (sessionId: string, log: OutputLog) => {
     await db.outputLogs.put({ ...log, sessionId });

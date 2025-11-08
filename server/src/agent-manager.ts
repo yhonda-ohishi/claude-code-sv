@@ -364,6 +364,30 @@ export class AgentManager {
   }
 
   /**
+   * Interrupt agent's current operation
+   */
+  interruptAgent(agentId: string): boolean {
+    const agent = this.agents.get(agentId);
+    if (!agent || agent.status !== 'running') {
+      console.error(`Cannot interrupt agent ${agentId}: not running`);
+      return false;
+    }
+
+    try {
+      if (this.useSDK) {
+        return this.claudeControllerSDK.interruptAgent(agentId);
+      } else {
+        // CLI版は未実装（必要に応じて実装）
+        console.warn(`Interrupt not supported for CLI agents`);
+        return false;
+      }
+    } catch (error) {
+      console.error(`Failed to interrupt agent ${agentId}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Approve edit permission request
    */
   approveEdit(agentId: string, toolUseId: string): boolean {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Agent } from '../types';
 import { AgentCard } from './AgentCard';
 import { CommandModal } from './CommandModal';
@@ -35,12 +35,38 @@ export function AgentManager({
 }: AgentManagerProps) {
   const [commandModalAgent, setCommandModalAgent] = useState<string | null>(null);
   const { getSession } = useIndexedDB();
+  const agentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const currentCommandOutput = commandModalAgent
     ? commandOutputs.get(commandModalAgent)
     : undefined;
 
-  const handleLoadSession = async (agentId: string, sessionId: string) => {
+  // Alt+数字でエージェントのメッセージ入力欄にフォーカス
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key >= '1' && e.key <= '9') {
+        e.preventDefault();
+        const index = parseInt(e.key) - 1;
+        if (index < agents.length) {
+          const agent = agents[index];
+          const agentElement = agentRefs.current.get(agent.id);
+          if (agentElement) {
+            const textarea = agentElement.querySelector('textarea');
+            if (textarea) {
+              textarea.focus();
+              // スクロールして表示
+              agentElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [agents]);
+
+  const handleLoadSession = async (_agentId: string, sessionId: string) => {
     const session = await getSession(sessionId);
 
     if (session) {
@@ -63,18 +89,26 @@ export function AgentManager({
         </div>
       ) : (
         <div className="flex-1 min-h-0 px-4 flex flex-wrap gap-3 overflow-auto content-start">
-          {agents.map((agent) => (
-            <AgentCard
+          {agents.map((agent, index) => (
+            <div
               key={agent.id}
-              agent={agent}
-              outputs={agentOutputs.get(agent.id) || []}
-              onStop={onStopAgent}
-              onRestart={onRestartAgent}
-              onDelete={onDeleteAgent}
-              onOpenCommand={(agentId) => setCommandModalAgent(agentId)}
-              onSendMessage={onSendMessage}
-              onLoadSession={handleLoadSession}
-            />
+              ref={(el) => {
+                if (el) agentRefs.current.set(agent.id, el);
+                else agentRefs.current.delete(agent.id);
+              }}
+            >
+              <AgentCard
+                agent={agent}
+                outputs={agentOutputs.get(agent.id) || []}
+                onStop={onStopAgent}
+                onRestart={onRestartAgent}
+                onDelete={onDeleteAgent}
+                onOpenCommand={(agentId) => setCommandModalAgent(agentId)}
+                onSendMessage={onSendMessage}
+                onLoadSession={handleLoadSession}
+                shortcutNumber={index + 1}
+              />
+            </div>
           ))}
         </div>
       )}

@@ -6,7 +6,7 @@ const WS_URL = 'ws://localhost:4002';
 export function useWebSocket(onMessage: (message: WSMessage) => void) {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const onMessageRef = useRef(onMessage);
 
   // Update ref when onMessage changes, but don't reconnect

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
 import { SessionHistory } from './SessionHistory';
 import { useIndexedDB } from '../hooks/useIndexedDB';
@@ -19,6 +19,20 @@ export function AgentStartForm({ onStartAgent }: AgentStartFormProps) {
   const [isSelectingDir, setIsSelectingDir] = useState(false);
   const [showSessionHistory, setShowSessionHistory] = useState(false);
   const { getSession } = useIndexedDB();
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Alt+0で新規エージェント起動フォームにフォーカス
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '0') {
+        e.preventDefault();
+        nameInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleSelectDirectory = async () => {
     setIsSelectingDir(true);
@@ -76,11 +90,13 @@ export function AgentStartForm({ onStartAgent }: AgentStartFormProps) {
       <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 flex items-center gap-2">
         <div className="flex items-center gap-2 flex-1">
           <input
+            ref={nameInputRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Agent Name"
             className="px-3 py-1.5 border rounded bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white text-sm w-32"
+            title="Alt+0でフォーカス"
           />
 
           <div className="flex items-center gap-1 flex-1">
