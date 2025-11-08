@@ -20,3 +20,12 @@
 - Always maintain Japanese language in responses, even in compact mode
 - Prioritize code quality and maintainability
 - Follow the specifications in specification.md
+
+## Git Operations
+- NEVER execute `git commit` directly without explicit user confirmation
+- When asked to commit changes:
+  1. Show the commit message you plan to use
+  2. Ask: "このコミットメッセージで実行してよろしいですか？ (y/N)"
+  3. Only proceed if user explicitly responds with "y", "yes", "はい", or "実行"
+- This rule applies even if the user says "commit" - always confirm first
+- Commands in `.claude/settings.local.json` "ask" list require explicit confirmation
