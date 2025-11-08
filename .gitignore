@@ -39,3 +39,12 @@ coverage/
 .cache/
 tmp/
 temp/
+
+# Local settings and runtime data
+.claude/settings.local.json
+server/data/agents.json
+
+# Test files
+nul
+test.txt
+*.test.tmp
