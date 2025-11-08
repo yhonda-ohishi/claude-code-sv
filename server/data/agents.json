@@ -1,0 +1,15 @@
+[
+  {
+    "id": "agent-1762607689508-0jhfx2c",
+    "sessionId": "session-test3-1762607689508",
+    "name": "test3",
+    "role": "test3",
+    "workDir": "C:\\js\\testjs",
+    "patterns": [
+      "**/*"
+    ],
+    "status": "running",
+    "startedAt": 1762607689508,
+    "pid": 28212
+  }
+]

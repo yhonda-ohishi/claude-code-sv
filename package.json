@@ -1,0 +1,21 @@
+{
+  "name": "multi-agent-dev",
+  "version": "1.0.0",
+  "description": "Multi-agent development system with Claude Code",
+  "scripts": {
+    "dev": "node kill-ports.js && concurrently \"npm run dev:server\" \"npm run dev:frontend\"",
+    "clean": "node kill-ports.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:server && npm run build:frontend",
+    "build:server": "cd server && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

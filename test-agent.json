@@ -1,0 +1,6 @@
+{
+  "name": "apitest",
+  "role": "apitest",
+  "workDir": "C:\\js\\testjs",
+  "patterns": ["**/*"]
+}

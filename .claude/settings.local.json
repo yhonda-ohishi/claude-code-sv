@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(cmd.exe //c \"taskkill /PID 19160 /F\")",
+      "Bash(cmd.exe //c \"taskkill /PID 27588 /F /T\")",
+      "Bash(cmd.exe //c \"taskkill /PID 3732 /F /T\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

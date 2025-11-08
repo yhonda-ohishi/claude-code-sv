@@ -1,0 +1,22 @@
+# Claude Code Rules for this project
+
+## Language
+- Always respond in Japanese (日本語で応答してください)
+- Use Japanese for all explanations, comments, and documentation
+- Keep technical terms in English when appropriate (e.g., API, WebSocket, React)
+
+## Code Style
+- Use TypeScript for all new code
+- Follow existing code formatting conventions
+- Write clear, concise comments in Japanese
+
+## Project Context
+- This is a multi-agent development system
+- Backend: Node.js with Hono framework
+- Frontend: React with TypeScript and TailwindCSS
+- Communication: WebSocket for real-time updates
+
+## Important Notes
+- Always maintain Japanese language in responses, even in compact mode
+- Prioritize code quality and maintainability
+- Follow the specifications in specification.md

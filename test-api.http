@@ -1,0 +1,44 @@
+### Health Check
+GET http://localhost:3001/health
+
+### Get All Agents
+GET http://localhost:3001/api/agents
+
+### Start Agent
+POST http://localhost:3001/api/agents/start
+Content-Type: application/json
+
+{
+  "name": "Frontend",
+  "role": "フロントエンド開発担当",
+  "workDir": "c:/js/test-project",
+  "patterns": ["src/**/*.tsx", "src/**/*.ts"]
+}
+
+### Get Agent Output
+GET http://localhost:3001/api/agents/agent-123/output
+
+### Get All Changes
+GET http://localhost:3001/api/changes
+
+### Accept Change
+POST http://localhost:3001/api/changes/change-123/accept
+
+### Decline Change
+POST http://localhost:3001/api/changes/change-123/decline
+
+### Send Instruction
+POST http://localhost:3001/api/changes/change-123/instruction
+Content-Type: application/json
+
+{
+  "instruction": "エラーハンドリングを追加してください"
+}
+
+### Stop Agent
+POST http://localhost:3001/api/agents/stop
+Content-Type: application/json
+
+{
+  "agentId": "agent-123"
+}
